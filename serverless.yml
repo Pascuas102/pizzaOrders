@@ -22,6 +22,15 @@ functions:
       - http:
           method: post
           path: /make-order
+  prepairOder:
+    handler: pizza.prepairOrder
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - PendingOrdersQueue
+              - Arn
+          batchSize: 1
 
 resources:
   Resources:
@@ -29,3 +38,17 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
           QueueName: "PendingOrdersQueue"
+    CompletedOrderTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "orderId"
+            AttributeType: "S"
+        KeySchema:
+          - AtributeName: "orderId"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.COMPLETED_ORDER_TABLE}
+

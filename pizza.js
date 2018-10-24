@@ -9,35 +9,47 @@ var sqs = new AWS.SQS({
     region: process.env.REGION
 });
 
-module.exports.makeAnOrder = async (event, context) => {
-    const orderId = uuid();
-    let messageBody = {
-        orderId : orderId
-    };
-    const params = {
-        MessageBody: JSON.stringify(messageBody),
-        QueueUrl: QUEUE_URL
-    };
+module.exports.makeAnOrder = (event, context, callback) => {
+	const orderId = uuid();
+    const data = JSON.parse(event.body);
+    let name = data.name;
+    let address = data.address;
+    let pizzas = data.pizzas;
 
-    sqs.sendMessage(params, function(err, data) {
-        if(err) {
-            return _sendResponse(500, err);
-        } else {
-            const message = {
-                'orderId' : orderId,
-                'messageId' : data.MessageId
-            }
-            return _sendResponse(200, message);
-        }
-    });
+	const params = {
+		MessageBody: JSON.stringify({
+            orderId: orderId,
+            clientName: name,
+            clientAddress: address,
+            clientOrderedPizzas: pizzas,
+        }),
+		QueueUrl: QUEUE_URL
+	};
 
-    return _sendResponse(500, 'err');
-
+	sqs.sendMessage(params, function(err, data) {
+		if (err) {
+			sendResponse(500, err, callback);
+		} else {
+			const message = {
+				orderId: orderId,
+				messageId: data.MessageId
+			};
+			sendResponse(200, message, callback);
+		}
+	});
 };
 
-function _sendResponse(statusCode, message) {
-	return {
+module.exports.prepairOrder = (event, context, callback) => {
+    console.log(event)
+
+    callback();
+}
+
+
+function sendResponse(statusCode, message, callback) {
+	const response = {
 		statusCode: statusCode,
 		body: JSON.stringify(message)
 	};
+	callback(null, response);
 }
