@@ -8,12 +8,21 @@ provider:
     REGION: ${self:provider.region}
     PENDING_ORDER_QUEUE:
       Ref: PendingOrdersQueue
+    COMPLETED_ORDER_TABLE: CompletedOrderTable
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - "sqs:SendMessage"
       Resource:
         - "arn:aws:sqs:${self:provider.region}:*:PendingOrdersQueue"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.COMPLETED_ORDER_TABLE}"
 
 functions:
   makeAnOrder:
@@ -42,11 +51,11 @@ resources:
       Type: "AWS::DynamoDB::Table"
       Properties:
         AttributeDefinitions:
-          - AttributeName: "orderId"
-            AttributeType: "S"
+        - AttributeName: "orderId"
+          AttributeType: "S"
         KeySchema:
-          - AtributeName: "orderId"
-            KeyType: "HASH"
+        - AttributeName: "orderId"
+          KeyType: "HASH"
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

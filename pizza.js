@@ -3,6 +3,8 @@
 const uuid = require('uuid/v1');
 const AWS = require('aws-sdk');
 
+const orderMetadataManager = require('./orderMetadataManager');
+
 const QUEUE_URL = process.env.PENDING_ORDER_QUEUE;
 
 var sqs = new AWS.SQS({
@@ -40,7 +42,15 @@ module.exports.makeAnOrder = (event, context, callback) => {
 };
 
 module.exports.prepairOrder = (event, context, callback) => {
-    console.log(event)
+	const order = JSON.parse(event.Records[0].body);
+
+	orderMetadataManager.saveCompletedOrder(order)
+		.then(data => {
+			callback();
+		})
+		.catch(error => {
+			callback(error);
+		});
 
     callback();
 }
